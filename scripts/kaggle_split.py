@@ -20,23 +20,31 @@ def generate_kaggle_splits():
     parser = MAGFiLOAnnotationParser(json_path)
     images_on_disk = set(f for f in os.listdir(train_images_dir) if f.endswith('.jpeg') or f.endswith('.jpg'))
     
-    records = []
+    file_name_to_info = {}
     for img_id, img_info in parser.img_id_to_info.items():
         filename = img_info['file_name']
         if filename in images_on_disk:
-            img_id = str(img_info['id'])
-            date_captured = img_info.get('date_captured', 'unknown')
-            day = date_captured.split('T')[0] if 'T' in date_captured else date_captured.split(' ')[0]
+            if filename not in file_name_to_info:
+                file_name_to_info[filename] = {
+                    'image_id': str(img_info['id']),
+                    'file_name': filename,
+                    'date_captured': img_info.get('date_captured', 'unknown'),
+                    'num_filaments': 0
+                }
             
-            anns = parser.get_annotations_for_image(img_id)
-            num_filaments = len(anns) if anns else 0
-            
-            records.append({
-                'image_id': img_id,
-                'file_name': filename,
-                'day': day,
-                'num_filaments': num_filaments
-            })
+            anns = parser.get_annotations_for_image(str(img_info['id']))
+            if anns:
+                file_name_to_info[filename]['num_filaments'] += len(anns)
+                
+    records = []
+    for info in file_name_to_info.values():
+        day = info['date_captured'].split('T')[0] if 'T' in info['date_captured'] else info['date_captured'].split(' ')[0]
+        records.append({
+            'image_id': info['image_id'],
+            'file_name': info['file_name'],
+            'day': day,
+            'num_filaments': info['num_filaments']
+        })
             
     df = pd.DataFrame(records)
     

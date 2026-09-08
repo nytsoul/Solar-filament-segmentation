@@ -1,0 +1,37 @@
+# configs/baseline.yaml
+dataset:
+  train_csv: "outputs/kaggle_train_split.csv"
+  val_csv: "outputs/kaggle_val_split.csv"
+  image_dir: "MAGFiLO_1.0_Kaggle_2026/train/train_images"
+  json_path: "MAGFiLO_1.0_Kaggle_2026/train/MAGFiLO_1.0_Annotations_kaggle2026_train.json"
+  patch_size: 768
+  overlap: 384
+
+model:
+  architecture: "UnetPlusPlus"
+  encoder_name: "resnet34"
+  encoder_weights: "imagenet"
+  in_channels: 1
+  classes: 1
+
+training:
+  batch_size: 8
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  epochs: 30
+  num_workers: 4
+  seed: 42
+  mixed_precision: true
+  gradient_clip_val: 1.0
+  use_multi_gpu: true
+
+augmentations:
+  p_hflip: 0.5
+  p_vflip: 0.5
+  p_rot90: 0.5
+  brightness_limit: 0.1
+  contrast_limit: 0.1
+  p_brightness_contrast: 0.3
+  gamma_limit: [90, 110]
+  p_gamma: 0.3
+  p_gauss_noise: 0.2

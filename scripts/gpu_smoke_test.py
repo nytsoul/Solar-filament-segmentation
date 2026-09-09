@@ -134,11 +134,21 @@ def run_smoke_test():
         import traceback
         report['traceback'] = traceback.format_exc()
 
-    out_path = os.path.join(base_dir, 'outputs', 'kaggle_gpu_smoke_test.json')
+    out_dir = os.path.join(base_dir, 'outputs')
+    if not os.access(base_dir, os.W_OK) and os.path.exists('/kaggle/working'):
+        out_dir = '/kaggle/working/outputs'
+        
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, 'kaggle_gpu_smoke_test.json')
     with open(out_path, 'w') as f:
         json.dump(report, f, indent=4)
         
     print(json.dumps(report, indent=2))
+    
+    if report.get('status') == 'PASS':
+        print("\nGPU SMOKE TEST: PASS")
+    else:
+        print("\nGPU SMOKE TEST: FAIL")
     
 if __name__ == '__main__':
     run_smoke_test()

@@ -9,7 +9,6 @@ import json
 import time
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import segmentation_models_pytorch as smp
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.data.dataset import MAGFiLODataset
@@ -104,7 +103,8 @@ def main():
     epochs = config['training']['epochs']
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
     
-    loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE, from_logits=True)
+    from src.losses.dice import DiceLoss
+    loss_fn = DiceLoss()
     bce_fn = torch.nn.BCEWithLogitsLoss()
     
     def combined_loss(y_pred, y_true):

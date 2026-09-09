@@ -5,7 +5,6 @@ import yaml
 import time
 import json
 import numpy as np
-import segmentation_models_pytorch as smp
 
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
@@ -81,7 +80,9 @@ def run_smoke_test():
         
         optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4)
         scaler = torch.amp.GradScaler('cuda') if device.type == 'cuda' else None
-        loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE, from_logits=True)
+        
+        from src.losses.dice import DiceLoss
+        loss_fn = DiceLoss()
         bce_fn = torch.nn.BCEWithLogitsLoss()
         
         model.train()

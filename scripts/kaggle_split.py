@@ -69,6 +69,8 @@ def generate_kaggle_splits():
     val_df = df[df['day'].isin(val_days)]
     
     out_dir = os.path.join(base_dir, 'outputs')
+    if not os.access(base_dir, os.W_OK) and os.path.exists('/kaggle/working'):
+        out_dir = '/kaggle/working/outputs'
     os.makedirs(out_dir, exist_ok=True)
     
     train_df.to_csv(os.path.join(out_dir, 'kaggle_train_split.csv'), index=False)

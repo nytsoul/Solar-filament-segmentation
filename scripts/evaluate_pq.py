@@ -98,12 +98,37 @@ def main():
             checkpoint_path = os.path.join(base_dir, 'checkpoints', 'best_baseline.pth')
             
     if os.path.exists(checkpoint_path):
-        try:
-            model.load_state_dict(torch.load(checkpoint_path, map_location=device))
-            print(f"Loaded checkpoint: {checkpoint_path}")
-        except Exception as e:
-            print(f"WARNING: Failed to load checkpoint {checkpoint_path} due to {e}")
-            print("Continuing with random weights for testing.")
+        print(f"\n--- CHECKPOINT COMPATIBILITY VERIFICATION ---")
+        print(f"Checkpoint Path: {checkpoint_path}")
+        print(f"Model Class: {model.__class__.__name__}")
+        print(f"Encoder: {model.encoder.__class__.__name__ if hasattr(model, 'encoder') else 'Unknown'}")
+        
+        param_count = sum(p.numel() for p in model.parameters())
+        print(f"Parameter Count: {param_count:,}")
+        
+        state_dict = torch.load(checkpoint_path, map_location=device)
+        print(f"Number of Checkpoint Keys: {len(state_dict)}")
+        print(f"Number of Model Keys: {len(model.state_dict())}")
+        
+        missing_keys, unexpected_keys = model.load_state_dict(state_dict, strict=False)
+        print(f"Missing Keys: {len(missing_keys)}")
+        if missing_keys:
+            for k in missing_keys[:5]:
+                print(f"  - {k}")
+            if len(missing_keys) > 5:
+                print(f"  ... and {len(missing_keys) - 5} more")
+                
+        print(f"Unexpected Keys: {len(unexpected_keys)}")
+        if unexpected_keys:
+            for k in unexpected_keys[:5]:
+                print(f"  - {k}")
+            if len(unexpected_keys) > 5:
+                print(f"  ... and {len(unexpected_keys) - 5} more")
+                
+        # Now do strict loading, which will raise an error if any keys mismatch
+        model.load_state_dict(state_dict, strict=True)
+        print("Successful Strict Loading Status: YES")
+        print("------------------------------------------\n")
     else:
         print(f"WARNING: Checkpoint not found at {checkpoint_path}. Using random weights.")
         

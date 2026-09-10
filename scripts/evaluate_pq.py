@@ -107,6 +107,12 @@ def main():
         print(f"Parameter Count: {param_count:,}")
         
         state_dict = torch.load(checkpoint_path, map_location=device)
+        
+        # Strip DataParallel 'module.' prefix if it exists
+        if list(state_dict.keys())[0].startswith('module.'):
+            print("Detected DataParallel checkpoint (module. prefix). Stripping prefix...")
+            state_dict = {k.replace('module.', ''): v for k, v in state_dict.items()}
+            
         print(f"Number of Checkpoint Keys: {len(state_dict)}")
         print(f"Number of Model Keys: {len(model.state_dict())}")
         

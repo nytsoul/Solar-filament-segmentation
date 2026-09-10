@@ -1,4 +1,14 @@
-import segmentation_models_pytorch as smp
+import os
+import sys
+
+try:
+    import segmentation_models_pytorch as smp
+except ImportError:
+    vendor_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'vendor'))
+    if vendor_path not in sys.path:
+        sys.path.insert(0, vendor_path)
+    import segmentation_models_pytorch as smp
+
 
 def get_baseline_model(config):
     model_cfg = config.get('model', {})

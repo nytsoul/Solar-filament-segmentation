@@ -6,7 +6,7 @@ __pycache__/
 # Data and checkpoints
 outputs/
 checkpoints/
-data/
+/data/
 datasets/
 *.zip
 

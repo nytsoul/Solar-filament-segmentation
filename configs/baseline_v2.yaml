@@ -1,0 +1,49 @@
+# configs/baseline_v2.yaml
+# Full-Image Baseline v2: Region-aware training + full-image validation
+dataset:
+  train_csv: "outputs/kaggle_train_split.csv"
+  val_csv: "outputs/kaggle_val_split.csv"
+  image_dir: "MAGFiLO_1.0_Kaggle_2026/train/train_images"
+  json_path: "MAGFiLO_1.0_Kaggle_2026/train/MAGFiLO_1.0_Annotations_kaggle2026_train.json"
+  patch_size: 768
+
+model:
+  architecture: "UnetPlusPlus"
+  encoder_name: "resnet34"
+  encoder_weights: "imagenet"
+  in_channels: 1
+  classes: 1
+
+training:
+  batch_size: 4
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+  epochs: 40
+  num_workers: 4
+  seed: 42
+  mixed_precision: true
+  gradient_clip_val: 1.0
+  use_multi_gpu: true
+  patches_per_image: 4
+
+sampling:
+  p_filament: 0.50
+  p_disk: 0.20
+  p_limb: 0.15
+  p_background: 0.15
+  limb_width: 50
+
+augmentations:
+  p_hflip: 0.5
+  p_vflip: 0.5
+  p_rot90: 0.5
+  brightness_limit: 0.1
+  contrast_limit: 0.1
+  p_brightness_contrast: 0.3
+  gamma_limit: [90, 110]
+  p_gamma: 0.3
+  p_gauss_noise: 0.2
+
+validation:
+  overlap: 0.25
+  num_vis_images: 5

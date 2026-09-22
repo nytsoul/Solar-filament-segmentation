@@ -14,6 +14,7 @@ from src.data.annotations import MAGFiLOAnnotationParser
 from src.data.masks import create_instance_masks, create_semantic_mask
 from src.data.augmentations import get_inference_augmentation
 from src.models.unet_baseline import get_baseline_model
+from src.data.dataset_fullimg import MAGFiLOFullImageDataset
 from src.inference.sliding_window import predict_full_image
 from src.postprocess.instance import semantic_to_instances
 from src.metrics.pq import calculate_pq
@@ -51,7 +52,7 @@ def plot_failure_analysis(image, gt_mask, prob_map, pred_mask, out_path, title):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='configs/baseline.yaml')
+    parser.add_argument('--config', type=str, default='configs/baseline_v2.yaml')
     parser.add_argument('--checkpoint', type=str, default=None)
     parser.add_argument('--limit', type=int, default=None)
     parser.add_argument('--prob_thresh', type=float, default=0.5)
@@ -140,7 +141,12 @@ def main():
         
     model.eval()
     
-    transform = get_inference_augmentation()
+    val_dataset = MAGFiLOFullImageDataset(
+        csv_path=val_csv_path,
+        img_dir=image_dir,
+        json_path=json_path,
+        transform=get_inference_augmentation()
+    )
     
     results = []
     
@@ -154,27 +160,26 @@ def main():
     
     iou_sums = 0.0
     
-    for idx, row in tqdm(val_df.iterrows(), total=len(val_df), desc="Evaluating PQ"):
-        filename = row['file_name']
+    for i in tqdm(range(len(val_dataset)), desc="Evaluating PQ"):
+        if args.limit and i >= args.limit:
+            break
+            
+        img_tensor, mask_tensor, filename = val_dataset[i]
+        img_tensor = img_tensor.unsqueeze(0).to(device)
+        gt_semantic = mask_tensor.squeeze().numpy().astype(np.uint8)
+        
         img_id = parser_ann.filename_to_img_id.get(filename)
         
-        img_path = os.path.join(image_dir, filename)
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
-        
-        # Ground truth
+        # Ground truth instances
         anns = parser_ann.get_annotations_for_image(img_id)
-        gt_instances = create_instance_masks(anns, height=img.shape[0], width=img.shape[1])
-        gt_semantic = create_semantic_mask(anns, height=img.shape[0], width=img.shape[1])
+        gt_instances = create_instance_masks(anns, height=gt_semantic.shape[0], width=gt_semantic.shape[1])
         
         # Inference
-        augmented = transform(image=img)
-        img_tensor = augmented['image'].unsqueeze(0).to(device)
-        
         prob_map = predict_full_image(
             model, 
             img_tensor, 
             patch_size=config['dataset'].get('patch_size', 768),
-            overlap=0.25,
+            overlap=config.get('validation', {}).get('overlap', 0.25),
             device=device
         )
         
@@ -263,6 +268,7 @@ def main():
     plot_targets = list(set(plot_targets))
     
     print("Generating visualizations for representative images...")
+    transform = get_inference_augmentation()
     for filename in plot_targets:
         img_id = parser_ann.filename_to_img_id.get(filename)
         img_path = os.path.join(image_dir, filename)
